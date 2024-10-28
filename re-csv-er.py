@@ -1,9 +1,11 @@
 import numpy as np
 import csv
+import os
 
 def read_lines(file):
-    f = open(file, "r")
-    return f.readlines()
+    with open(file, "r") as f:
+        lines = f.readlines()
+    return lines
 
 def re_csv(file, file_path):
     new_file = []
@@ -23,37 +25,3 @@ def re_csv(file, file_path):
     with open(file_path, "x") as file_object:
         write = csv.writer(file_object)
         write.writerows(new_file)
-
-def analyse_documents(generic_file, generic_file_path, name_list):
-    for frequency in name_list:
-        frequency = str(int(frequency))
-        file = generic_file
-        file += frequency
-        file += ".csv"
-        file_path = generic_file_path
-        file_path += frequency
-        file_path += ".csv"
-
-# low amplitude
-
-generic_file = r"C:\Users\simon\Downloads\lg137\lg137\test_"
-generic_file_path = r"C:\Users\simon\Downloads\lg137\re-comma-ified\test_"
-test_frequencies = np.linspace(10, 40, 16)
-
-analyse_documents(generic_file, generic_file_path, test_frequencies)
-
-# high amplitude
-
-generic_file = r"C:\Users\simon\Downloads\lg137\lg137\test_la_"
-generic_file_path = r"C:\Users\simon\Downloads\lg137\re-comma-ified\test_la_"
-test_frequencies = np.linspace(10, 40, 16)
-
-analyse_documents(generic_file, generic_file_path, test_frequencies)
-
-# long shake
-
-generic_file = r"C:\Users\simon\Downloads\lg137\lg137\test_long_p"
-generic_file_path = r"C:\Users\simon\Downloads\lg137\re-comma-ified\test_long_p"
-test_frequencies = np.linspace(1, 3, 3)
-
-analyse_documents(generic_file, generic_file_path, test_frequencies)
