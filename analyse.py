@@ -1,10 +1,76 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 root = r".\lab_data"
 
+def analyse_documents(generic_file):
+    for file_name in os.listdir(root):
+        if file_name[:len(generic_file)] == generic_file:
+            data = np.genfromtxt(root + "\\" + file_name, delimiter=',', skip_header=2)
+
+            frequency_list = 
+
+
+# low amplitude
+generic_file = r"test_"
+
+analyse_documents(generic_file)
+
+# high amplitude
+generic_file = r"test_la_"
+
+# long shake
+generic_file = r"test_long_p"
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+root = r".\lab_data"
+omega_n = 20.
+active_sensors = [1, 2]
+normalize_to = 1
+
+cutoff = 3.0
+window_size = 21
+granularity = 100
+damping_range = 0.5
+
+test_consistency = False
+variable_omega_n = False
+
+
+def slice_along_axis(ndim, axis, start, end):
+    slices = [slice(None)] * ndim
+    slices[axis] = slice(start, end)
+    return tuple(slices)
+
+def moving_average(a, n, axis=None):
+    out = np.cumsum(a, axis=axis)
+    if axis == None:
+        start_slices = slice(n, None)
+        end_slices = slice(None, -n)
+        out_slices = slice(n-1, None)
+    else:
+        start_slices = slice_along_axis(a.ndim, axis, n, None)
+        end_slices = slice_along_axis(a.ndim, axis, None, -n)
+        out_slices = slice_along_axis(a.ndim, axis, n-1, None)
+    out[start_slices] = out[start_slices] - out[end_slices]
+    return out[out_slices] / n
+
+def find_peaks(a, n, f=2.0, axis=-1):
+    out = np.zeros_like(a)
+    slices = slice_along_axis(a.ndim, axis, int(np.floor((n-1)*0.5)), -int(np.ceil((n-1)*0.5)))
+    out[slices] = a[slices] > (f * moving_average(a, n, axis))
+    return out
+
+def first_peak(a, n, f=2.0, axis=-1):
+    return np.argmax(find_peaks(a,n,f,axis))
+
+def filtered(a):
+    return a * (np.cumsum(a != 0, axis=1) == 1)
 
 def analyse_documents(generic_file):
     spectra_sets = list()
@@ -157,8 +223,6 @@ def analyse_documents(generic_file):
     ax1.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
 
     plt.show()
-
-            frequency_list = 
 
 
 # low amplitude
