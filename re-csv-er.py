@@ -25,3 +25,12 @@ def re_csv(file, file_path):
     with open(file_path, "x") as file_object:
         write = csv.writer(file_object)
         write.writerows(new_file)
+
+
+root_path = "."
+for path in [f_name for f_name in os.listdir(root_path) if f_name.split(".")[-1] == "csv"]:
+    print(path)
+    with open(root_path + "\\" + path, "r") as f:
+        lines = [", ".join([v.strip() for v in l.split("\t")]) + "\n" for l in f.readlines() if len(l.strip()) != 0]
+    with open(root_path + "\\" + path, "w") as f:
+        f.write("".join(lines))
