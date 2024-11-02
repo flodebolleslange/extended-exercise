@@ -182,14 +182,11 @@ def analyse_documents(generic_file):
                 best_alignment = alignment[:, selection_freq]
                 ax2.plot(np.linspace(0.001, damping_range, granularity), -np.power(best_alignment, 0.25))
                 selection = np.argmin(best_alignment)
-                print(f"Best frequency was {np.interp(selection_freq, [0, granularity-1], [0.001, omega_n])}")
+                print(f"Best frequency was {np.interp(selection_freq, [0, granularity-1], [0.001, omega_n]) if variable_omega_n else omega_n}")
                 print(f"Best damping ratio was {np.interp(selection, [0, granularity-1], [0.0, damping_range])}")
                 print(f"Lowest disagreement was {best_alignment[selection]}")
                 ax1.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], (hs[:, :, selection_freq].T * (acc[i-1] != 0))[selection, min_index:max_index] * sums[i-1], linewidth=0.5)
                 ax1.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], hs[:, :, selection_freq].T[selection, min_index:max_index] * sums[i-1], linewidth=0.5)
-                # ax2.imshow(hs)
-                # fing = np.array([np.dot(hs[:, j], acc[i-1]) / sums[i-1] for j in range(granularity)])
-                # ax2.plot(np.linspace(0.0, damping_range, granularity), fing)
 
     if test_consistency:
         ax2.imshow(total_deviation)
@@ -201,21 +198,6 @@ def analyse_documents(generic_file):
     ax1.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
 
     plt.show()
-
-
-# test = np.array([[0., 0., 0., 0., 5., 0., 0., 0., 2., 0., 0., 0.], [0., 0., 0., 0., 5., 0., 0., 0., 2., 0., 0., 0.]])
-# print(moving_average(test[slice(normalize_to)], 4, -1))
-# print(moving_average(test[slice(normalize_to)], 4, -1).shape)
-# print(find_peaks(test[slice(normalize_to)], 4, 2.0))
-# print(find_peaks(test[slice(normalize_to)], 4, 2.0).shape)
-# test = np.array([[1,2,3,4], [5,6,7,8]])
-# test2 = np.array([2,3,4,5])
-# print(test * test2)
-
-# xs = np.arange(3)
-# ys = np.arange(4)
-# print(np.meshgrid(xs, ys))
-# print(np.meshgrid(xs, ys)[0].shape)
 
 
 # low amplitude
