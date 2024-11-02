@@ -1,30 +1,5 @@
 import os
 import numpy as np
-
-
-root = r".\lab_data"
-
-def analyse_documents(generic_file):
-    for file_name in os.listdir(root):
-        if file_name[:len(generic_file)] == generic_file:
-            data = np.genfromtxt(root + "\\" + file_name, delimiter=',', skip_header=2)
-
-            frequency_list = 
-
-
-# low amplitude
-generic_file = r"test_"
-
-analyse_documents(generic_file)
-
-# high amplitude
-generic_file = r"test_la_"
-
-# long shake
-generic_file = r"test_long_p"
-
-import os
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -91,19 +66,35 @@ def analyse_documents(generic_file):
                 rel_phase = phase * peaks
             else:
                 rel_spectra = abs_spectra * peaks / abs_spectra[normalize_to]
-                rel_phase = ((phase - phase[normalize_to]) % 360.) * peaks
+                rel_phase = ((phase - phase[normalize_to]) % 360.)
 
             spectra_sets.append(rel_spectra[1:])
             phase_sets.append(rel_phase[1:])
 
-            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            fig = plt.figure(file_name.split(".")[0])
+            ((ax1, ax2), (ax3, ax4)) = fig.subplots(2, 2)
 
-            ax2.set_title(file_name.split(".")[0])
+            ax1.set_title("Measured Acceleration")
+            ax1.set_xlabel("Frequency / $Hz$")
+            ax1.set_ylabel("Acceleration")
 
-            ax1.set_xlabel("Frequency / Hz")
-            ax2.set_xlabel("Frequency / Hz")
+            ax2.set_title("Relative Acceleration")
+            ax2.set_xlabel("Frequency / $Hz$")
+            if normalize_to == None:
+                ax2.set_ylabel("Acceleration density")
+            else:
+                ax2.set_ylabel(f"Acceleration relative to sensor {normalize_to}")
+
+            ax3.set_title("Measured Phase")
             ax3.set_xlabel(r"Relative Frequency / $\omega$")
+            ax3.set_ylabel("Phase / Degrees")
+
+            ax4.set_title("Relative Phase")
             ax4.set_xlabel(r"Relative Frequency / $\omega$")
+            if normalize_to == None:
+                ax4.set_ylabel("Phase at peaks / Degrees")
+            else:
+                ax4.set_ylabel(f"Phase relative to sensor {normalize_to}")
 
             max_phase_sample = int(omega_n * rel_spectra.shape[1] / (metadata[1] * np.pi))
             for i in active_sensors:
@@ -155,7 +146,8 @@ def analyse_documents(generic_file):
         phase_total_deviation = np.sum(np.abs(phase_consistency), axis=2) / overlap
         phase_variance_deviation = np.var(phase_consistency, axis=2, where=(phase_consistency != 0))
 
-        fig, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(2,4)
+        fig = plt.figure("Accumulated Frequency Response Consistency")
+        ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = fig.subplots(2,4)
 
         ax2.set_title("Total Consistency")
         ax3.set_title("Consistency Variation")
@@ -167,19 +159,26 @@ def analyse_documents(generic_file):
         ax2.set_ylabel("Data Set")
         ax3.set_xlabel("Sensor Number")
         ax3.set_ylabel("Data Set")
+
         ax5.set_xlabel("Frequency / Hz")
+        ax5.set_ylabel("Phase / Degrees")
+
         ax6.set_xlabel("Sensor Number")
         ax6.set_ylabel("Data Set")
         ax7.set_xlabel("Sensor Number")
         ax7.set_ylabel("Data Set")
     else:
-        fig, (ax1, ax2) = plt.subplots(1,2)
+        fig = plt.figure("Accumulated Frequency Response")
+        (ax1, ax2) = fig.subplots(1,2)
 
         ax2.set_title("Damping Prediction Alignment")
+        ax2.set_xlabel("Damping Ratio")
+        ax2.set_ylabel("Agreement")
 
     ax1.set_title("Accumulated Response")
 
     ax1.set_xlabel("Frequency / Hz")
+    ax1.set_ylabel("Relative Acceleration")
 
     wn_range = np.linspace(0.001, omega_n, granularity) if variable_omega_n else np.array([omega_n])
     mask = np.sum(acc != 0, axis=0) != 0
@@ -247,7 +246,7 @@ analyse_documents(generic_file)
 
 # high amplitude
 generic_file = r"test_la_"
-analyse_documents(generic_file)
+# analyse_documents(generic_file)
 
 # long shake
 generic_file = r"test_long_p"
