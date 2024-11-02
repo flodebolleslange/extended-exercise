@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 root = r".\lab_data"
 omega_n = 20.
-active_sensors = [1, 2]
+active_sensors = [1, 2, 3]
 normalize_to = 1
 
 cutoff = 3.0
@@ -14,7 +14,7 @@ granularity = 100
 damping_range = 0.5
 
 test_consistency = False
-variable_omega_n = False
+variable_omega_n = True
 
 
 def slice_along_axis(ndim, axis, start, end):
@@ -71,28 +71,28 @@ def analyse_documents(generic_file):
             spectra_sets.append(rel_spectra[1:])
             phase_sets.append(rel_phase[1:])
 
-            # fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
-            # ax2.set_title(file_name.split(".")[0])
+            ax2.set_title(file_name.split(".")[0])
 
-            # ax1.set_xlabel("Frequency / Hz")
-            # ax2.set_xlabel("Frequency / Hz")
-            # ax3.set_xlabel(r"Relative Frequency / $\omega$")
-            # ax4.set_xlabel(r"Relative Frequency / $\omega$")
+            ax1.set_xlabel("Frequency / Hz")
+            ax2.set_xlabel("Frequency / Hz")
+            ax3.set_xlabel(r"Relative Frequency / $\omega$")
+            ax4.set_xlabel(r"Relative Frequency / $\omega$")
 
-            # max_phase_sample = int(omega_n * rel_spectra.shape[1] / (metadata[1] * np.pi))
-            # for i in active_sensors:
-            #     ax1.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), norm_spectra[i])
-            #     if i != normalize_to: ax2.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), rel_spectra[i])
-            #     ax3.plot(np.linspace(0., 2., max_phase_sample), phase[i, :max_phase_sample])
-            #     if i != normalize_to: ax4.plot(np.linspace(0., 2., max_phase_sample), rel_phase[i, :max_phase_sample])
+            max_phase_sample = int(omega_n * rel_spectra.shape[1] / (metadata[1] * np.pi))
+            for i in active_sensors:
+                ax1.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), abs_spectra[i])
+                if i != normalize_to: ax2.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), rel_spectra[i])
+                ax3.plot(np.linspace(0., 2., max_phase_sample), phase[i, :max_phase_sample])
+                if i != normalize_to: ax4.plot(np.linspace(0., 2., max_phase_sample), rel_phase[i, :max_phase_sample])
 
-            # ax1.legend(["Sensor " + str(i) for i in active_sensors])
-            # ax2.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
-            # ax3.legend(["Sensor " + str(i) for i in active_sensors])
-            # ax4.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
+            ax1.legend(["Sensor " + str(i) for i in active_sensors])
+            ax2.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
+            ax3.legend(["Sensor " + str(i) for i in active_sensors])
+            ax4.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
 
-            # plt.show()
+            plt.show()
 
     spectra_sets = [filtered(s) for s in spectra_sets]
     phase_sets = [filtered(p) for p in phase_sets]
@@ -157,16 +157,20 @@ def analyse_documents(generic_file):
     ax1.set_xlabel("Frequency / Hz")
 
     wn_range = np.linspace(0.001, omega_n, granularity) if variable_omega_n else np.array([omega_n])
+    mask = np.sum(acc != 0, axis=0) != 0
     z2s, ws, wns = np.meshgrid(np.linspace(0.001, damping_range, granularity)**2, np.linspace(0.0, np.pi * metadata[1], acc.shape[1]), wn_range)
     wr2s = (ws / wns)**2
-    hs = np.sqrt((1 + 4*z2s*wr2s) / ((1-wr2s)**2 + 4*z2s*wr2s))
-    mask = np.sum(acc != 0, axis=0) != 0
-    hs /= np.tensordot(mask, hs, axes=1)
-    sums = np.sum(acc, axis=1)
+    full_hs = np.sqrt((1 + 4*z2s*wr2s) / ((1-wr2s)**2 + 4*z2s*wr2s))
+    hs = full_hs * np.expand_dims(np.expand_dims(mask, axis=1), axis=1)
+    h_sums = np.sum(hs, axis=0)
+    full_hs /= h_sums
+    hs /= h_sums
+    acc_sums = np.sum(acc, axis=1)
 
     min_index = np.min(np.argmax(acc > 0, axis=1))
     max_index = np.min(np.argmax(np.cumsum(acc, axis=1), axis=1))
 
+    selection_freqs, selections = list(), list()
     for i in active_sensors:
         if i != normalize_to:
             ax1.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], acc[i-1, min_index:max_index])
@@ -176,17 +180,22 @@ def analyse_documents(generic_file):
                 ax5.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], phase_acc[i-1, min_index:max_index])
                 ax8.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1]), phase_consistency[0][i - 1])
             else:
-                alignment = np.sum((np.expand_dims(np.expand_dims(acc[i-1] / sums[i-1], axis=1), axis=2) - hs) ** 2, axis=0)
+                alignment = np.sum((np.expand_dims(np.expand_dims(acc[i-1] / acc_sums[i-1], axis=1), axis=2) - hs) ** 2, axis=0)
                 mins = np.min(alignment, axis=0)
                 selection_freq = np.argmin(mins)
                 best_alignment = alignment[:, selection_freq]
                 ax2.plot(np.linspace(0.001, damping_range, granularity), -np.power(best_alignment, 0.25))
                 selection = np.argmin(best_alignment)
-                print(f"Best frequency was {np.interp(selection_freq, [0, granularity-1], [0.001, omega_n]) if variable_omega_n else omega_n}")
-                print(f"Best damping ratio was {np.interp(selection, [0, granularity-1], [0.0, damping_range])}")
-                print(f"Lowest disagreement was {best_alignment[selection]}")
-                ax1.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], (hs[:, :, selection_freq].T * (acc[i-1] != 0))[selection, min_index:max_index] * sums[i-1], linewidth=0.5)
-                ax1.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], hs[:, :, selection_freq].T[selection, min_index:max_index] * sums[i-1], linewidth=0.5)
+                selection_freqs.append(selection_freq)
+                selections.append(selection)
+                # selection = 20
+                print(f"Best frequency for sensor {i} was {np.interp(selection_freq, [0, granularity-1], [0.001, omega_n]) if variable_omega_n else omega_n}")
+                print(f"Best damping ratio for sensor {i} was {np.interp(selection, [0, granularity-1], [0.0, damping_range])}")
+                print(f"Lowest disagreement for sensor {i} was {best_alignment[selection]}")
+                ax1.scatter(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], hs[:, :, selection_freq].T[selection, min_index:max_index] * acc_sums[i-1], s=4)
+    if not test_consistency:
+        for i, sel_freq, sel in zip([i for i in active_sensors if i != normalize_to], selection_freqs, selections):
+            ax1.plot(np.linspace(0., metadata[1] * 0.5, acc.shape[1])[min_index:max_index], full_hs[:, :, sel_freq].T[sel, min_index:max_index] * acc_sums[i-1], linewidth=0.5)
 
     if test_consistency:
         ax2.imshow(total_deviation)
@@ -195,7 +204,14 @@ def analyse_documents(generic_file):
         ax6.imshow(phase_total_deviation)
         ax7.imshow(phase_variance_deviation)
 
-    ax1.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
+    if test_consistency:
+        ax1_legends = ["Sensor " + str(i) for i in active_sensors if i != normalize_to]
+    else:
+        ax1_legends = list()
+        for i in active_sensors:
+            ax1_legends.extend(["Sensor " + str(i), "Sensor " + str(i) + " Sample"])
+        ax1_legends.extend(["Sensor " + str(i) + " Expected" for l in ax1_legends])
+    ax1.legend(ax1_legends)
 
     plt.show()
 
@@ -210,3 +226,4 @@ analyse_documents(generic_file)
 
 # long shake
 generic_file = r"test_long_p"
+# analyse_documents(generic_file)
