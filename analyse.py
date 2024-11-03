@@ -7,6 +7,7 @@ root = r".\lab_data"
 omega_n = 20.
 active_sensors = [1, 2, 3]
 normalize_to = 1
+max_plot_freq = 10.
 
 cutoff = 3.0
 window_size = 21
@@ -101,10 +102,12 @@ def analyse_documents(generic_file):
                 else:
                     ax4.set_ylabel(f"Phase relative to sensor {normalize_to}")
 
+            max_freq = metadata[1] * 0.5 if max_plot_freq == None else max_plot_freq
+            max_freq_sample = int(spectra.shape[1] * 2 * max_plot_freq / metadata[1])
             max_phase_sample = int(omega_n * rel_spectra.shape[1] / (metadata[1] * np.pi))
             for i in active_sensors:
-                ax1.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), abs_spectra[i])
-                if i != normalize_to: ax2.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), rel_spectra[i])
+                ax1.plot(np.linspace(0., max_freq, max_freq_sample), abs_spectra[i, :max_freq_sample])
+                if i != normalize_to: ax2.plot(np.linspace(0., max_freq, max_freq_sample), rel_spectra[i, :max_freq_sample])
                 if plot_phase:
                     ax3.plot(np.linspace(0., 2., max_phase_sample), phase[i, :max_phase_sample])
                     if i != normalize_to: ax4.plot(np.linspace(0., 2., max_phase_sample), rel_phase[i, :max_phase_sample])
@@ -249,11 +252,11 @@ def analyse_documents(generic_file):
 
 # low amplitude
 generic_file = r"test_"
-analyse_documents(generic_file)
+# analyse_documents(generic_file)
 
 # high amplitude
 generic_file = r"test_la_"
-# analyse_documents(generic_file)
+analyse_documents(generic_file)
 
 # long shake
 generic_file = r"test_long_p"
