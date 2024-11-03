@@ -15,6 +15,7 @@ damping_range = 0.5
 
 test_consistency = False
 variable_omega_n = True
+plot_phase = False
 
 
 def slice_along_axis(ndim, axis, start, end):
@@ -72,7 +73,10 @@ def analyse_documents(generic_file):
             phase_sets.append(rel_phase[1:])
 
             fig = plt.figure(file_name.split(".")[0])
-            ((ax1, ax2), (ax3, ax4)) = fig.subplots(2, 2)
+            if plot_phase:
+                ((ax1, ax2), (ax3, ax4)) = fig.subplots(2, 2)
+            else:
+                (ax1, ax2) = fig.subplots(1, 2)
 
             ax1.set_title("Measured Acceleration")
             ax1.set_xlabel("Frequency / $Hz$")
@@ -85,28 +89,31 @@ def analyse_documents(generic_file):
             else:
                 ax2.set_ylabel(f"Acceleration relative to sensor {normalize_to}")
 
-            ax3.set_title("Measured Phase")
-            ax3.set_xlabel(r"Relative Frequency / $\omega$")
-            ax3.set_ylabel("Phase / Degrees")
+            if plot_phase:
+                ax3.set_title("Measured Phase")
+                ax3.set_xlabel(r"Relative Frequency / $\omega$")
+                ax3.set_ylabel("Phase / Degrees")
 
-            ax4.set_title("Relative Phase")
-            ax4.set_xlabel(r"Relative Frequency / $\omega$")
-            if normalize_to == None:
-                ax4.set_ylabel("Phase at peaks / Degrees")
-            else:
-                ax4.set_ylabel(f"Phase relative to sensor {normalize_to}")
+                ax4.set_title("Relative Phase")
+                ax4.set_xlabel(r"Relative Frequency / $\omega$")
+                if normalize_to == None:
+                    ax4.set_ylabel("Phase at peaks / Degrees")
+                else:
+                    ax4.set_ylabel(f"Phase relative to sensor {normalize_to}")
 
             max_phase_sample = int(omega_n * rel_spectra.shape[1] / (metadata[1] * np.pi))
             for i in active_sensors:
                 ax1.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), abs_spectra[i])
                 if i != normalize_to: ax2.plot(np.linspace(0., metadata[1] * 0.5, spectra.shape[1]), rel_spectra[i])
-                ax3.plot(np.linspace(0., 2., max_phase_sample), phase[i, :max_phase_sample])
-                if i != normalize_to: ax4.plot(np.linspace(0., 2., max_phase_sample), rel_phase[i, :max_phase_sample])
+                if plot_phase:
+                    ax3.plot(np.linspace(0., 2., max_phase_sample), phase[i, :max_phase_sample])
+                    if i != normalize_to: ax4.plot(np.linspace(0., 2., max_phase_sample), rel_phase[i, :max_phase_sample])
 
             ax1.legend(["Sensor " + str(i) for i in active_sensors])
             ax2.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
-            ax3.legend(["Sensor " + str(i) for i in active_sensors])
-            ax4.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
+            if plot_phase:
+                ax3.legend(["Sensor " + str(i) for i in active_sensors])
+                ax4.legend(["Sensor " + str(i) for i in active_sensors if i != normalize_to])
 
             plt.show()
 
